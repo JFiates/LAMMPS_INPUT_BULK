@@ -1,1 +1,3 @@
-# LAMMPS_INPUT_BULK
+# LAMMPS_INPUT_DMSO
+
+Lammps input files for simulating bulk DMSO.
