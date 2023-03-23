@@ -1,0 +1,68 @@
+#OPLS DMSO/LiPF6
+
+# Intialization
+units		real
+dimension	3
+boundary	p p p
+atom_style	full
+
+variable	NRUNP equal 3E6
+variable	NRUNE equal 1E6
+variable	NRUND equal 1E6
+variable	VTEMP equal 298	
+variable	VPRES equal 1.0 
+pair_style      lj/charmm/coul/long 10.0 12.0
+pair_modify	tail yes 
+pair_modify	mix arithmetic 
+bond_style 	harmonic
+angle_style 	harmonic
+dihedral_style 	charmm
+kspace_style	pppm 1.0E-4
+
+read_data	electrolyte.data  
+
+group		dmso type 1 2 3 4
+group		li type 5
+group		pf6 type 6 7
+
+# Setup atoms 
+velocity	all create ${VTEMP} 110534 mom yes rot yes dist gaussian     
+
+# Settings
+timestep	1.0
+neighbor	2.0 bin 
+neigh_modify	delay 0 every 1 check yes
+
+# Operations 
+fix		1 all npt temp ${VTEMP} ${VTEMP} 100 iso ${VPRES} ${VPRES} 1000
+
+# Output
+thermo		5
+thermo_style	custom time temp press pe ke etotal density vol
+log		npt.lammps
+
+
+
+# Actions 
+run		${NRUNP}	
+
+# Operations 
+unfix		1
+fix		2 all nvt temp ${VTEMP} ${VTEMP} 100 
+
+run		${NRUNE}
+
+
+reset_timestep	0
+# Output
+thermo		5
+thermo_style	custom time temp etotal density vol
+log		nvtd.lammps
+dump            myDump1 li custom 5 li.data id type mass vx vy vz
+dump            myDump2 pf6 custom 5 pf6.data id type mass vx vy vz
+compute 	myRDF all rdf 120 5 2 5 4 5 6 5 7
+fix 		RDF all ave/time 1 1000000 1000000 c_myRDF[*] file rdf.data mode vector 
+
+
+# Actions 
+run		${NRUND}
